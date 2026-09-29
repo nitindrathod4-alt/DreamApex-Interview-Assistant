@@ -1,23 +1,613 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
-<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>DreamApex Interview Assistant</title><link rel="stylesheet" href="/style.css"></head>
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>DreamApex — AI Interview Assistant</title>
+  <link rel="stylesheet" href="/style.css">
+</head>
+
 <body>
+
 <div class="app">
-<aside class="sidebar"><div class="brand"><span class="logo">D</span><div><b>DreamApex</b><small>Interview AI</small></div></div>
-<nav><button data-page="dashboard" class="nav active">⌂ Dashboard</button><button data-page="setup" class="nav">⚙ Interview Setup</button><button data-page="live" class="nav">● Live Interview</button><button data-page="questions" class="nav">▣ Question Bank</button><button data-page="history" class="nav">◷ History</button><button data-page="report" class="nav">▤ Report</button></nav>
-<div class="side-foot">Gemini AI<br><span>Connected locally</span></div></aside>
-<main class="main">
-<header><div><h1 id="pageTitle">Dashboard</h1><p id="pageSub">Your interview workspace</p></div><div id="connection" class="pill">● Ready</div></header>
-<section id="dashboard" class="page active"><div class="hero card"><div><span class="eyebrow">AI INTERVIEW WORKSPACE</span><h2>Prepare. Practice. Perform.</h2><p>Build your interview context once, then run a structured technical interview session.</p><button class="primary" onclick="go('setup')">Start New Interview →</button></div><div class="hero-icon">D</div></div><div class="stats"><div class="card"><b id="qCount">0</b><span>Questions Practiced</span></div><div class="card"><b>6+</b><span>Interview Areas</span></div><div class="card"><b>AI</b><span>Gemini Powered</span></div></div><div class="card"><h3>Interview Flow</h3><div class="flow"><span>01 Setup</span><i>→</i><span>02 Questions</span><i>→</i><span>03 AI Answers</span><i>→</i><span>04 Report</span></div></div></section>
 
-<section id="setup" class="page"><div class="card"><h2>Interview Setup</h2><p class="muted">Add the job and candidate context before starting.</p><div class="grid"><label>Role<input id="role" placeholder="DevOps Engineer"></label><label>Company<input id="company" placeholder="Company name"></label></div><label>Job Description<textarea id="jd" rows="8" placeholder="Paste the complete job description..."></textarea></label><label>Resume / Candidate Context<textarea id="resume" rows="8" placeholder="Paste your verified skills, experience and projects..."></textarea></label><div class="actions"><button class="ghost" onclick="go('dashboard')">Cancel</button><button class="primary" onclick="saveSetup();go('live')">Start Interview →</button></div></div></section>
+  <!-- SIDEBAR -->
+  <aside class="sidebar">
 
-<section id="live" class="page"><div class="live-grid"><div class="card question-panel"><div class="panel-head"><span class="eyebrow">LIVE INTERVIEW</span><span id="qNumber">Question 1</span></div><h2>Interview Question</h2><textarea id="question" rows="7" placeholder="Type the interviewer question or use the microphone..."></textarea><div class="controls"><button id="micBtn" class="mic">🎙 Speak</button><select id="mode"><option value="concise">Concise Answer</option><option value="detailed">Detailed Answer</option><option value="STAR">STAR Format</option><option value="technical">Technical</option><option value="followup">Follow-up Questions</option></select><select id="language"><option>English</option><option>Hindi</option><option>Marathi</option></select></div><button id="generate" class="primary full">Generate AI Answer ✨</button><div class="next-row"><button class="ghost" id="prevBtn">← Previous</button><button class="ghost" id="nextBtn">Next Question →</button></div></div><div class="card answer-panel"><div class="panel-head"><span class="eyebrow">AI RESPONSE</span><div><button id="copyBtn" class="ghost">Copy</button><button id="speakBtn" class="ghost">🔊</button></div></div><div id="answer" class="answer empty">Your AI answer will appear here.</div><div id="followups" class="followups"></div></div></div></section>
+    <div class="brand">
+      <div class="brand-logo">A</div>
+      <div>
+        <h1>Dream<span>Apex</span></h1>
+        <small>AI Interview Assistant</small>
+      </div>
+    </div>
 
-<section id="questions" class="page"><div class="card"><div class="section-head"><div><h2>Question Bank</h2><p class="muted">Choose a category to load practice questions.</p></div></div><div class="categories"><button onclick="loadCategory('AWS')">☁ AWS</button><button onclick="loadCategory('Docker')">◈ Docker</button><button onclick="loadCategory('Kubernetes')">◉ Kubernetes</button><button onclick="loadCategory('Jenkins / CI-CD')">⚡ Jenkins / CI-CD</button><button onclick="loadCategory('Terraform')">◇ Terraform</button><button onclick="loadCategory('Linux')">⌘ Linux</button><button onclick="loadCategory('Scenarios')">⚠ Scenarios</button><button onclick="loadCategory('HR')">♙ HR</button></div><div id="bank" class="bank"></div></div></section>
+    <nav>
+      <button class="nav active" data-page="dashboard" onclick="go('dashboard')">
+        <span>⌂</span> Dashboard
+      </button>
 
-<section id="history" class="page"><div class="card"><div class="section-head"><div><h2>Session History</h2><p class="muted">Your recent interview questions and answers.</p></div><button id="clearHistory" class="ghost">Clear</button></div><div id="historyList" class="history"></div></div></section>
+      <button class="nav" data-page="setup" onclick="go('setup')">
+        <span>▶</span> Start Interview
+      </button>
 
-<section id="report" class="page"><div class="card report"><span class="eyebrow">SESSION REPORT</span><h2>Interview Summary</h2><div class="report-grid"><div><b id="reportCount">0</b><span>Questions answered</span></div><div><b>Technical</b><span>Primary focus</span></div><div><b>AI</b><span>Answer assistant</span></div></div><h3>Practice Areas</h3><ul><li>AWS & cloud troubleshooting</li><li>Docker & containerization</li><li>Kubernetes / EKS</li><li>Jenkins & CI/CD</li><li>Terraform / Infrastructure as Code</li><li>Linux & production troubleshooting</li></ul></div></section>
-</main></div><script src="/app.js"></script>
-</body></html>
+      <button class="nav" data-page="live" onclick="go('live')">
+        <span>◉</span> Live Interview
+      </button>
+
+      <button class="nav" data-page="questions" onclick="go('questions')">
+        <span>▦</span> Question Bank
+      </button>
+
+      <button class="nav" data-page="history" onclick="go('history')">
+        <span>◷</span> Interview History
+      </button>
+
+      <button class="nav" data-page="report" onclick="go('report')">
+        <span>▥</span> Progress & Reports
+      </button>
+    </nav>
+
+    <div class="sidebar-bottom">
+      <div class="pro-card">
+        <div class="pro-icon">♛</div>
+        <h3>Upgrade to Pro</h3>
+        <p>Unlock advanced AI interview features.</p>
+        <div class="check">✓ Unlimited Interviews</div>
+        <div class="check">✓ AI Feedback</div>
+        <div class="check">✓ Custom Questions</div>
+        <button>Upgrade Now →</button>
+      </div>
+    </div>
+
+  </aside>
+
+
+  <!-- MAIN -->
+  <main class="main">
+
+    <!-- TOP BAR -->
+    <header class="topbar">
+
+      <div class="search">
+        <span>⌕</span>
+        <input placeholder="Search interview topics, roles, companies or questions...">
+        <kbd>⌘ K</kbd>
+      </div>
+
+      <div class="top-actions">
+        <div class="ai-badge">
+          <span>✦</span> Powered by AI
+        </div>
+
+        <div class="notification">♧<i></i></div>
+
+        <div class="profile">
+          <div class="avatar">N</div>
+          <div>
+            <strong>Nitin Rathod</strong>
+            <small>Free Plan</small>
+          </div>
+          <span>⌄</span>
+        </div>
+      </div>
+
+    </header>
+
+
+    <!-- ================= DASHBOARD ================= -->
+    <section id="dashboard" class="page active">
+
+      <div class="hero-grid">
+
+        <div class="hero">
+
+          <div class="hero-content">
+            <div class="eyebrow">✦ AI-POWERED INTERVIEW PRACTICE</div>
+
+            <h2>
+              Master Interviews.<br>
+              <span>Build Your Dream Career.</span>
+            </h2>
+
+            <p>
+              AI-powered mock interviews, real-time feedback,
+              personalized learning and career guidance.
+            </p>
+
+            <div class="hero-buttons">
+              <button class="primary-btn" onclick="go('setup')">
+                ▶ Start Interview
+              </button>
+
+              <button class="secondary-btn">
+                ▶ View Demo
+              </button>
+            </div>
+
+            <div class="learners">
+              <div class="avatars">
+                <b>N</b><b>A</b><b>R</b><b>S</b><b>K</b>
+              </div>
+              <span>Trusted by 10,000+ learners</span>
+            </div>
+          </div>
+
+          <div class="hero-art">
+            <div class="orb"></div>
+            <div class="person">👨🏻‍💻</div>
+            <div class="laptop">A</div>
+
+            <div class="floating-card fc1">✓ AI Feedback</div>
+            <div class="floating-card fc2">⚡ Skill Analysis</div>
+            <div class="floating-card fc3">✦ Career Guidance</div>
+          </div>
+
+        </div>
+
+
+        <!-- GOAL -->
+        <div class="goal-card card">
+
+          <div class="card-title">
+            <h3>Today's Goal</h3>
+            <a>View All →</a>
+          </div>
+
+          <div class="goal-score">
+            <div class="circle">
+              <strong>3/5</strong>
+            </div>
+
+            <p>Complete 2 more<br>interviews today!</p>
+          </div>
+
+          <label><input type="checkbox" checked> Complete 1 Interview</label>
+          <label><input type="checkbox" checked> Review AI Feedback</label>
+          <label><input type="checkbox"> Practice Weak Topic</label>
+          <label><input type="checkbox"> Improve Score</label>
+          <label><input type="checkbox"> Stay Consistent</label>
+
+        </div>
+
+      </div>
+
+
+      <!-- INTERVIEW MODES -->
+      <div class="section-card">
+
+        <div class="section-heading">
+          <h3>◈ Choose an Interview Mode</h3>
+          <a>View All →</a>
+        </div>
+
+        <div class="mode-grid">
+
+          <div class="mode-card blue">
+            <div class="mode-icon">&lt;/&gt;</div>
+            <div>
+              <h4>Technical Interview</h4>
+              <p>DevOps, AWS, Kubernetes, Linux</p>
+            </div>
+            <span>→</span>
+          </div>
+
+          <div class="mode-card purple">
+            <div class="mode-icon">♟</div>
+            <div>
+              <h4>Behavioral Interview</h4>
+              <p>HR Questions, Soft Skills</p>
+            </div>
+            <span>→</span>
+          </div>
+
+          <div class="mode-card cyan">
+            <div class="mode-icon">☁</div>
+            <div>
+              <h4>Cloud Interview</h4>
+              <p>AWS, Azure, GCP</p>
+            </div>
+            <span>→</span>
+          </div>
+
+          <div class="mode-card pink">
+            <div class="mode-icon">▣</div>
+            <div>
+              <h4>Custom Interview</h4>
+              <p>Create your own questions</p>
+            </div>
+            <span>→</span>
+          </div>
+
+        </div>
+      </div>
+
+
+      <div class="dashboard-columns">
+
+        <!-- PROGRESS -->
+        <div class="section-card">
+
+          <div class="section-heading">
+            <h3>▥ Your Progress</h3>
+            <select>
+              <option>Last 7 Days</option>
+              <option>Last 30 Days</option>
+            </select>
+          </div>
+
+          <div class="progress-grid">
+
+            <div class="progress-item">
+              <div class="progress-ring r1">
+                <strong>78%</strong>
+              </div>
+              <span>Overall Score</span>
+            </div>
+
+            <div class="progress-item">
+              <div class="progress-ring r2">
+                <strong>85%</strong>
+              </div>
+              <span>Technical</span>
+            </div>
+
+            <div class="progress-item">
+              <div class="progress-ring r3">
+                <strong>72%</strong>
+              </div>
+              <span>Behavioral</span>
+            </div>
+
+            <div class="progress-item">
+              <div class="progress-ring r4">
+                <strong>65%</strong>
+              </div>
+              <span>Cloud</span>
+            </div>
+
+          </div>
+        </div>
+
+
+        <!-- AI COACH -->
+        <div class="coach-card">
+
+          <div class="coach-head">
+            <h3>✦ AI Interview Coach</h3>
+            <span>● Live</span>
+          </div>
+
+          <div class="robot">🤖</div>
+
+          <div class="coach-message">
+            <strong>Hi Nitin!</strong>
+            <p>Ready to practice today? 🚀</p>
+          </div>
+
+          <button onclick="go('live')">
+            🎙 Ask AI anything...
+            <span>➤</span>
+          </button>
+
+        </div>
+
+      </div>
+
+
+      <!-- RECENT + QUICK -->
+      <div class="bottom-grid">
+
+        <div class="section-card recent">
+
+          <div class="section-heading">
+            <h3>◷ Recent Interviews</h3>
+            <a>View All →</a>
+          </div>
+
+          <div class="table-head">
+            <span>Topic</span>
+            <span>Date</span>
+            <span>Score</span>
+            <span>Action</span>
+          </div>
+
+          <div class="table-row">
+            <span>☁ AWS DevOps</span>
+            <span>29 Sep 2026</span>
+            <b class="score green">82%</b>
+            <button>View</button>
+          </div>
+
+          <div class="table-row">
+            <span>◈ Kubernetes</span>
+            <span>27 Sep 2026</span>
+            <b class="score yellow">76%</b>
+            <button>View</button>
+          </div>
+
+          <div class="table-row">
+            <span>♟ HR Interview</span>
+            <span>25 Sep 2026</span>
+            <b class="score pink-score">68%</b>
+            <button>View</button>
+          </div>
+
+          <div class="table-row">
+            <span>▣ Linux</span>
+            <span>23 Sep 2026</span>
+            <b class="score green">90%</b>
+            <button>View</button>
+          </div>
+
+        </div>
+
+
+        <div class="quick-card">
+
+          <h3>⚡ Quick Actions</h3>
+
+          <button onclick="go('setup')">▶ Start New Interview <span>→</span></button>
+          <button onclick="go('questions')">▦ Browse Question Bank <span>→</span></button>
+          <button onclick="go('report')">▥ View My Reports <span>→</span></button>
+          <button>⚙ Manage Custom Questions <span>→</span></button>
+
+          <div class="achievements">
+            <h3>🏆 Achievements</h3>
+
+            <div class="badges">
+              <div>🔥<small>10 Day Streak</small></div>
+              <div>♛<small>25 Interviews</small></div>
+              <div>🎯<small>80%+ Score</small></div>
+            </div>
+          </div>
+
+        </div>
+
+      </div>
+
+    </section>
+
+
+    <!-- ================= SETUP ================= -->
+    <section id="setup" class="page">
+
+      <div class="page-header">
+        <h2>Interview Setup</h2>
+        <p>Configure your AI-powered interview.</p>
+      </div>
+
+      <div class="setup-card">
+
+        <label>Target Role</label>
+        <input id="role" placeholder="e.g. DevOps Engineer">
+
+        <label>Company</label>
+        <input id="company" placeholder="e.g. Amazon">
+
+        <label>Job Description</label>
+        <textarea id="jd" placeholder="Paste the job description..."></textarea>
+
+        <label>Resume / Candidate Context</label>
+        <textarea id="resume" placeholder="Paste your resume or experience..."></textarea>
+
+        <button class="primary-btn" onclick="saveSetup();go('live')">
+          Start AI Interview →
+        </button>
+
+      </div>
+
+    </section>
+
+
+    <!-- ================= LIVE ================= -->
+    <section id="live" class="page">
+
+      <div class="live-layout">
+
+        <div class="live-main">
+
+          <div class="live-top">
+            <span>Technical Interview</span>
+            <span class="live-status">● LIVE</span>
+          </div>
+
+          <div class="question-box">
+
+            <small>QUESTION <span id="qNumber">1</span></small>
+
+            <h2 id="question">
+              Ready to start your interview?
+            </h2>
+
+            <div class="tags">
+              <span>AWS</span>
+              <span>Kubernetes</span>
+              <span>DevOps</span>
+              <span>Linux</span>
+            </div>
+
+          </div>
+
+
+          <div class="voice-box">
+
+            <button id="micBtn" class="mic">🎙</button>
+
+            <div class="wave">
+              <i></i><i></i><i></i><i></i><i></i>
+              <i></i><i></i><i></i><i></i><i></i>
+            </div>
+
+            <span>Speak your answer naturally</span>
+
+          </div>
+
+
+          <textarea
+            id="answer"
+            placeholder="Your answer will appear here..."
+          ></textarea>
+
+
+          <div class="live-controls">
+
+            <button id="prevBtn">← Previous</button>
+
+            <button id="generate" class="primary-btn">
+              ✦ Generate AI Answer
+            </button>
+
+            <button id="nextBtn">
+              Next →
+            </button>
+
+          </div>
+
+        </div>
+
+
+        <aside class="copilot">
+
+          <div class="copilot-head">
+            <h3>✦ AI Copilot</h3>
+            <span>● Live</span>
+          </div>
+
+          <div class="copilot-tabs">
+            <button>Suggestions</button>
+            <button>Follow-ups</button>
+            <button>Notes</button>
+          </div>
+
+          <div id="followups" class="copilot-content">
+
+            <div class="tip good">
+              <b>💡 Good start!</b>
+              <p>Keep your explanation clear and structured.</p>
+            </div>
+
+            <div class="tip">
+              <b>⚡ Add this point</b>
+              <p>Include a real-world example from your project.</p>
+            </div>
+
+            <div class="tip purple-tip">
+              <b>▣ Try to include</b>
+              <p>Mention architecture, troubleshooting and monitoring.</p>
+            </div>
+
+          </div>
+
+          <button class="ai-input">
+            Ask AI anything...
+            <span>➤</span>
+          </button>
+
+        </aside>
+
+      </div>
+
+    </section>
+
+
+    <!-- ================= QUESTIONS ================= -->
+    <section id="questions" class="page">
+
+      <div class="page-header">
+        <h2>Question Bank</h2>
+        <p>Practice real interview questions.</p>
+      </div>
+
+      <div class="category-grid">
+
+        <button onclick="loadCategory('AWS')">☁ AWS</button>
+        <button onclick="loadCategory('Kubernetes')">◈ Kubernetes</button>
+        <button onclick="loadCategory('Docker')">▣ Docker</button>
+        <button onclick="loadCategory('Jenkins')">⚙ Jenkins</button>
+        <button onclick="loadCategory('Terraform')">◆ Terraform</button>
+        <button onclick="loadCategory('Linux')">⌘ Linux</button>
+        <button onclick="loadCategory('DevOps')">∞ DevOps</button>
+
+      </div>
+
+      <div id="bank" class="question-bank"></div>
+
+    </section>
+
+
+    <!-- ================= HISTORY ================= -->
+    <section id="history" class="page">
+
+      <div class="page-header">
+        <h2>Interview History</h2>
+        <p>Your previous practice sessions.</p>
+      </div>
+
+      <button id="clearHistory" class="danger-btn">
+        Clear History
+      </button>
+
+      <div id="historyList" class="history-list"></div>
+
+    </section>
+
+
+    <!-- ================= REPORT ================= -->
+    <section id="report" class="page">
+
+      <div class="page-header">
+        <h2>Performance Report</h2>
+        <p>Track your interview preparation.</p>
+      </div>
+
+      <div class="report-grid">
+
+        <div class="report-card">
+          <span>Overall Score</span>
+          <strong>78%</strong>
+        </div>
+
+        <div class="report-card">
+          <span>Technical</span>
+          <strong>85%</strong>
+        </div>
+
+        <div class="report-card">
+          <span>Behavioral</span>
+          <strong>72%</strong>
+        </div>
+
+        <div class="report-card">
+          <span>Cloud</span>
+          <strong>65%</strong>
+        </div>
+
+      </div>
+
+      <div class="report-big">
+        <h3>AI Performance Analysis</h3>
+        <p>
+          Your technical knowledge is progressing well.
+          Focus on real-world examples, architecture explanations
+          and structured troubleshooting answers.
+        </p>
+
+        <div class="analysis-bar">
+          <span style="width:85%"></span>
+        </div>
+
+      </div>
+
+      <p id="reportCount"></p>
+
+    </section>
+
+  </main>
+
+</div>
+
+<script src="/app.js"></script>
+
+</body>
+</html>
