@@ -1,29 +1,34 @@
 # DreamApex Interview Assistant
 
-Complete local AI-assisted interview practice application.
+AI-assisted interview practice app powered by Google Gemini.
 
-Features: interview setup, JD/resume context, concise/detailed/STAR/technical/follow-up modes, AI generation, WebSocket, speech-to-text, text-to-speech, copy, local history, health API, demo mode and Docker.
+## Features
+- Role/company, JD and resume context
+- Concise, detailed, STAR, technical and follow-up modes
+- Gemini AI answers
+- WebSocket connection
+- Browser speech-to-text
+- Text-to-speech
+- Copy answer
+- Local history
+- Demo mode
+- Docker support
 
-## Run
+## Gemini setup
 
-```bash
-git clone https://github.com/nitindrathod4-alt/DreamApex-Interview-Assistant.git
-cd DreamApex-Interview-Assistant
-npm install
-cp .env.example .env
-npm start
-```
+Create a Gemini API key in Google AI Studio, then create a .env file:
 
-Open http://localhost:3000.
+    GEMINI_API_KEY=your_gemini_api_key_here
+    GEMINI_MODEL=gemini-2.5-flash-lite
+    PORT=3000
 
-Windows PowerShell: `Copy-Item .env.example .env` then `npm install` and `npm start`.
+Install and run:
 
-Add OPENAI_API_KEY to .env. Without a key, demo mode works.
+    npm install
+    npm start
 
-## Docker
+Open http://localhost:3000
 
-```bash
-docker compose up --build
-```
+The application uses the official @google/genai Node.js SDK. Gemini 2.5 Flash-Lite is designed for low-latency, high-frequency tasks and has a free tier according to Google's API pricing documentation.
 
-Use this only in interviews where AI assistance is explicitly permitted. The project does not implement stealth, screen-share evasion, credential theft, or hidden monitoring.
+Never commit .env or expose your API key.
