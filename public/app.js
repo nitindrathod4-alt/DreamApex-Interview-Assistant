@@ -3,7 +3,10 @@ const $ = (id) => document.getElementById(id);
 let ws = null;
 let recognition = null;
 let questionIndex = 1;
-let history = JSON.parse(localStorage.getItem("dreamapex_history") || "[]");
+
+let history = JSON.parse(
+  localStorage.getItem("dreamapex_history") || "[]"
+);
 
 const questionBank = {
   AWS: [
@@ -11,36 +14,43 @@ const questionBank = {
     "How would you troubleshoot an unreachable EC2 instance?",
     "How do you design high availability in AWS?"
   ],
+
   Docker: [
     "What is Docker and why is it used?",
     "A container works locally but fails in production. How do you troubleshoot it?",
     "Explain Docker image vs Docker container."
   ],
+
   Kubernetes: [
     "What is CrashLoopBackOff and how do you troubleshoot it?",
     "Explain Kubernetes Service types.",
     "How would you troubleshoot a pod stuck in Pending?"
   ],
+
   "Jenkins / CI-CD": [
     "Explain a Jenkins CI/CD pipeline.",
     "A Jenkins deployment suddenly fails. How do you troubleshoot it?",
     "What is the difference between CI and CD?"
   ],
+
   Terraform: [
     "What is Terraform state?",
     "How do you handle an existing AWS resource in Terraform?",
     "What is the difference between Terraform plan and apply?"
   ],
+
   Linux: [
     "How do you troubleshoot high CPU usage on Linux?",
     "How do you check disk and memory usage?",
     "How do you troubleshoot a Linux server that is not responding?"
   ],
+
   Scenarios: [
     "Your production EKS application is returning 502 errors. How would you troubleshoot it?",
     "Your production application suddenly has high latency. What would you check?",
     "A Kubernetes deployment is failing. Explain your troubleshooting approach."
   ],
+
   HR: [
     "Tell me about yourself.",
     "Why should we hire you as a DevOps Engineer?",
@@ -54,39 +64,73 @@ const questionBank = {
 
 function connectAI() {
   try {
+    const protocol =
+      location.protocol === "https:" ? "wss" : "ws";
+
     ws = new WebSocket(
-      `${location.protocol === "https:" ? "wss" : "ws"}://${location.host}`
+      `${protocol}://${location.host}`
     );
 
     ws.onopen = () => {
       console.log("DreamApex AI connected");
+
+      const connection = $("connection");
+
+      if (connection) {
+        connection.textContent = "● Ready";
+        connection.classList.add("ready");
+      }
     };
 
     ws.onmessage = (event) => {
       try {
         const data = JSON.parse(event.data);
 
+        if (data.type === "connected") {
+          console.log("AI connected");
+          return;
+        }
+
+        if (data.type === "status") {
+          setLoading(true);
+          return;
+        }
+
         if (data.type === "answer") {
-          showAnswer(data.answer || data.text || "No answer received.");
+          showAnswer(
+            data.answer || "No answer generated.",
+            data.followUps || []
+          );
+          return;
         }
 
         if (data.type === "error") {
-          showAnswer("AI Error: " + (data.message || "Something went wrong."));
+          setLoading(false);
+          showAnswer(
+            "AI Error: " +
+              (data.message || "Something went wrong.")
+          );
         }
-      } catch (err) {
-        console.error("WebSocket message error:", err);
+      } catch (error) {
+        console.error("WebSocket message error:", error);
       }
     };
 
-    ws.onerror = (err) => {
-      console.error("WebSocket error:", err);
+    ws.onerror = (error) => {
+      console.error("WebSocket error:", error);
     };
 
     ws.onclose = () => {
       console.log("AI connection closed");
+
+      const connection = $("connection");
+
+      if (connection) {
+        connection.textContent = "● Offline";
+      }
     };
-  } catch (err) {
-    console.error("WebSocket connection failed:", err);
+  } catch (error) {
+    console.error("WebSocket connection failed:", error);
   }
 }
 
@@ -96,38 +140,73 @@ connectAI();
    PAGE NAVIGATION
 ========================= */
 
+const pageInfo = {
+  dashboard: {
+    title: "Dashboard",
+    subtitle: "Your interview workspace"
+  },
+
+  setup: {
+    title: "Interview Setup",
+    subtitle: "Configure your interview"
+  },
+
+  live: {
+    title: "Live Interview",
+    subtitle: "AI-powered interview workspace"
+  },
+
+  questions: {
+    title: "Question Bank",
+    subtitle: "Practice technical and HR questions"
+  },
+
+  history: {
+    title: "History",
+    subtitle: "Your interview practice history"
+  },
+
+  report: {
+    title: "Report",
+    subtitle: "Interview practice summary"
+  }
+};
+
 function go(page) {
-  document.querySelectorAll(".page").forEach((p) => {
-    p.classList.remove("active");
+  document.querySelectorAll(".page").forEach((section) => {
+    section.classList.remove("active");
   });
 
-  const target = $(`${page}Page`);
+  const target = $(page);
 
   if (target) {
     target.classList.add("active");
   } else {
-    console.warn(`Page not found: ${page}Page`);
+    console.error("Page not found:", page);
+    return;
   }
 
-  document.querySelectorAll(".nav-btn").forEach((btn) => {
-    btn.classList.remove("active");
+  document.querySelectorAll(".nav").forEach((button) => {
+    button.classList.remove("active");
+
+    if (button.dataset.page === page) {
+      button.classList.add("active");
+    }
   });
 
-  const activeBtn = document.querySelector(
-    `.nav-btn[data-page="${page}"]`
-  );
+  const info = pageInfo[page];
 
-  if (activeBtn) {
-    activeBtn.classList.add("active");
-  }
+  if (info) {
+    const title = $("pageTitle");
+    const subtitle = $("pageSub");
 
-  window.scrollTo({
-    top: 0,
-    behavior: "smooth"
-  });
+    if (title) {
+      title.textContent = info.title;
+    }
 
-  if (page === "dashboard") {
-    updateDashboard();
+    if (subtitle) {
+      subtitle.textContent = info.subtitle;
+    }
   }
 
   if (page === "history") {
@@ -137,169 +216,99 @@ function go(page) {
   if (page === "report") {
     updateReport();
   }
+
+  if (page === "questions") {
+    loadCategory("AWS");
+  }
+
+  window.scrollTo({
+    top: 0,
+    behavior: "smooth"
+  });
 }
 
-/* IMPORTANT:
-   Makes go() available to HTML onclick=""
-*/
+/* HTML onclick="" साठी global */
 window.go = go;
 
 /* =========================
-   NAV BUTTONS
+   SETUP
 ========================= */
 
-document.addEventListener("DOMContentLoaded", () => {
-  document.querySelectorAll(".nav-btn").forEach((btn) => {
-    btn.addEventListener("click", () => {
-      const page = btn.dataset.page;
-
-      if (page) {
-        go(page);
-      }
-    });
-  });
-
-  setupEventListeners();
-  updateDashboard();
-  renderQuestionBank();
-  renderHistory();
-  updateReport();
-});
-
-/* =========================
-   EVENT LISTENERS
-========================= */
-
-function setupEventListeners() {
-  const startBtn = $("startInterviewBtn");
-
-  if (startBtn) {
-    startBtn.addEventListener("click", startInterview);
-  }
-
-  const generateBtn = $("generateBtn");
-
-  if (generateBtn) {
-    generateBtn.addEventListener("click", generateAnswer);
-  }
-
-  const micBtn = $("micBtn");
-
-  if (micBtn) {
-    micBtn.addEventListener("click", toggleSpeech);
-  }
-
-  const nextBtn = $("nextBtn");
-
-  if (nextBtn) {
-    nextBtn.addEventListener("click", nextQuestion);
-  }
-
-  const previousBtn = $("previousBtn");
-
-  if (previousBtn) {
-    previousBtn.addEventListener("click", previousQuestion);
-  }
-
-  const clearHistoryBtn = $("clearHistoryBtn");
-
-  if (clearHistoryBtn) {
-    clearHistoryBtn.addEventListener("click", clearHistory);
-  }
-
-  const question = $("question");
-
-  if (question) {
-    question.addEventListener("keydown", (event) => {
-      if (event.key === "Enter" && (event.ctrlKey || event.metaKey)) {
-        generateAnswer();
-      }
-    });
-  }
-}
-
-/* =========================
-   START INTERVIEW
-========================= */
-
-function startInterview() {
-  const role = $("role")?.value || "";
-  const company = $("company")?.value || "";
-  const jobDescription = $("jobDescription")?.value || "";
-  const candidateContext = $("candidateContext")?.value || "";
-
+function saveSetup() {
   const setup = {
-    role,
-    company,
-    jobDescription,
-    candidateContext
+    role: $("role")?.value || "",
+    company: $("company")?.value || "",
+    jobDescription: $("jd")?.value || "",
+    resume: $("resume")?.value || ""
   };
 
-  localStorage.setItem("dreamapex_setup", JSON.stringify(setup));
+  localStorage.setItem(
+    "dreamapex_setup",
+    JSON.stringify(setup)
+  );
 
-  questionIndex = 1;
+  const role = $("role")?.value || "";
 
-  const roleTitle = $("liveRole");
+  console.log("Interview setup saved:", setup);
 
-  if (roleTitle) {
-    roleTitle.textContent = role || "DevOps Interview";
+  if (role) {
+    console.log("Role:", role);
   }
+}
 
-  go("live");
+window.saveSetup = saveSetup;
+
+/* =========================
+   LOAD SETUP
+========================= */
+
+function loadSetup() {
+  try {
+    const setup = JSON.parse(
+      localStorage.getItem("dreamapex_setup") || "{}"
+    );
+
+    if ($("role")) {
+      $("role").value = setup.role || "";
+    }
+
+    if ($("company")) {
+      $("company").value = setup.company || "";
+    }
+
+    if ($("jd")) {
+      $("jd").value = setup.jobDescription || "";
+    }
+
+    if ($("resume")) {
+      $("resume").value = setup.resume || "";
+    }
+  } catch (error) {
+    console.error("Setup load error:", error);
+  }
 }
 
 /* =========================
-   GENERATE AI ANSWER
+   LIVE INTERVIEW
 ========================= */
 
 function generateAnswer() {
-  const questionEl = $("question");
-
-  if (!questionEl) {
-    console.error("Question input not found");
-    return;
-  }
-
-  const question = questionEl.value.trim();
+  const question = $("question")?.value.trim();
 
   if (!question) {
-    alert("Please enter or speak an interview question.");
+    alert("Please enter an interview question first.");
     return;
   }
-
-  const mode = $("answerMode")?.value || "Concise";
-  const language = $("language")?.value || "English";
 
   const setup = JSON.parse(
     localStorage.getItem("dreamapex_setup") || "{}"
   );
 
-  const role = setup.role || "DevOps Engineer";
-  const company = setup.company || "Company";
-
-  const prompt = `
-You are an AI interview assistant helping a candidate during an interview.
-
-Role: ${role}
-Company: ${company}
-
-Interview question:
-${question}
-
-Answer mode: ${mode}
-Language: ${language}
-
-Give a professional interview-ready answer.
-Keep the answer practical and natural.
-For technical questions, include commands/examples where useful.
-For scenario questions, explain the troubleshooting steps clearly.
-Do not mention that you are an AI assistant.
-`;
+  const mode = $("mode")?.value || "concise";
+  const language = $("language")?.value || "English";
 
   if (!ws || ws.readyState !== WebSocket.OPEN) {
-    showAnswer(
-      "AI connection is not ready. Please wait a moment and try again."
-    );
+    alert("AI connection is not ready. Please wait a moment.");
     connectAI();
     return;
   }
@@ -309,84 +318,100 @@ Do not mention that you are an AI assistant.
   ws.send(
     JSON.stringify({
       type: "generate",
-      prompt,
+
+      role: setup.role || "DevOps Engineer",
+
+      company: setup.company || "",
+
+      jobDescription:
+        setup.jobDescription || "",
+
+      resume:
+        setup.resume || "",
+
       question,
+
       mode,
+
       language
     })
   );
 }
 
-/* =========================
-   SHOW ANSWER
-========================= */
+function setLoading(loading) {
+  const button = $("generate");
 
-function showAnswer(answer) {
+  if (!button) return;
+
+  button.disabled = loading;
+
+  button.textContent = loading
+    ? "Generating..."
+    : "Generate AI Answer ✨";
+}
+
+function showAnswer(answer, followUps = []) {
   setLoading(false);
 
   const answerBox = $("answer");
 
   if (answerBox) {
+    answerBox.classList.remove("empty");
     answerBox.textContent = answer;
   }
 
-  const answerPanel = $("answerPanel");
+  const followupBox = $("followups");
 
-  if (answerPanel) {
-    answerPanel.classList.add("has-answer");
+  if (followupBox) {
+    followupBox.innerHTML = "";
+
+    if (followUps.length) {
+      const heading = document.createElement("strong");
+
+      heading.textContent = "Possible Follow-ups";
+
+      followupBox.appendChild(heading);
+
+      followUps.forEach((item) => {
+        const div = document.createElement("div");
+
+        div.textContent = item;
+
+        followupBox.appendChild(div);
+      });
+    }
   }
 
-  const question = $("question")?.value?.trim();
+  const question = $("question")?.value.trim();
 
-  if (question && answer) {
+  if (question) {
     history.push({
       question,
       answer,
       time: new Date().toLocaleString(),
-      index: questionIndex
+      number: questionIndex
     });
 
     localStorage.setItem(
       "dreamapex_history",
       JSON.stringify(history)
     );
-
-    updateDashboard();
-    updateReport();
   }
+
+  updateStats();
+  updateReport();
 }
 
 /* =========================
-   LOADING
-========================= */
-
-function setLoading(loading) {
-  const btn = $("generateBtn");
-
-  if (btn) {
-    btn.disabled = loading;
-    btn.textContent = loading
-      ? "Generating..."
-      : "✨ Generate Answer";
-  }
-
-  const answerBox = $("answer");
-
-  if (loading && answerBox) {
-    answerBox.textContent = "DreamApex AI is thinking...";
-  }
-}
-
-/* =========================
-   SPEECH RECOGNITION
+   SPEECH
 ========================= */
 
 function toggleSpeech() {
-  const SR =
+  const SpeechRecognition =
     window.SpeechRecognition ||
     window.webkitSpeechRecognition;
 
-  if (!SR) {
+  if (!SpeechRecognition) {
     alert(
       "Speech recognition is not supported. Please use Google Chrome."
     );
@@ -409,7 +434,7 @@ function toggleSpeech() {
     return;
   }
 
-  recognition = new SR();
+  recognition = new SpeechRecognition();
 
   const language = $("language")?.value || "English";
 
@@ -438,7 +463,10 @@ function toggleSpeech() {
   };
 
   recognition.onerror = (event) => {
-    console.error("Speech recognition error:", event.error);
+    console.error(
+      "Speech recognition error:",
+      event.error
+    );
   };
 
   recognition.onend = () => {
@@ -453,46 +481,45 @@ function toggleSpeech() {
 }
 
 /* =========================
-   NEXT QUESTION
+   QUESTION NAVIGATION
 ========================= */
 
 function nextQuestion() {
   questionIndex++;
 
-  const counter = $("questionNumber");
+  updateQuestionNumber();
 
-  if (counter) {
-    counter.textContent = `Question ${questionIndex}`;
+  if ($("question")) {
+    $("question").value = "";
+    $("question").focus();
   }
 
-  const questionBox = $("question");
+  if ($("answer")) {
+    $("answer").textContent =
+      "Your AI answer will appear here.";
 
-  if (questionBox) {
-    questionBox.value = "";
-    questionBox.focus();
+    $("answer").classList.add("empty");
   }
 
-  const answerBox = $("answer");
-
-  if (answerBox) {
-    answerBox.textContent =
-      "Enter the next interview question.";
+  if ($("followups")) {
+    $("followups").innerHTML = "";
   }
 }
-
-/* =========================
-   PREVIOUS QUESTION
-========================= */
 
 function previousQuestion() {
   if (questionIndex > 1) {
     questionIndex--;
   }
 
-  const counter = $("questionNumber");
+  updateQuestionNumber();
+}
 
-  if (counter) {
-    counter.textContent = `Question ${questionIndex}`;
+function updateQuestionNumber() {
+  const number = $("qNumber");
+
+  if (number) {
+    number.textContent =
+      `Question ${questionIndex}`;
   }
 }
 
@@ -500,63 +527,46 @@ function previousQuestion() {
    QUESTION BANK
 ========================= */
 
-function renderQuestionBank() {
-  const container = $("questionBank");
+function loadCategory(category) {
+  const bank = $("bank");
 
-  if (!container) {
-    console.warn("questionBank element not found");
-    return;
-  }
+  if (!bank) return;
 
-  container.innerHTML = "";
+  bank.innerHTML = "";
 
-  Object.entries(questionBank).forEach(
-    ([category, questions]) => {
-      const categoryDiv = document.createElement("div");
+  const questions = questionBank[category] || [];
 
-      categoryDiv.className = "question-category";
+  questions.forEach((question, index) => {
+    const button = document.createElement("button");
 
-      const title = document.createElement("h3");
-      title.textContent = category;
+    button.className = "bank-item";
+    button.type = "button";
 
-      categoryDiv.appendChild(title);
+    button.textContent =
+      `${index + 1}. ${question}`;
 
-      questions.forEach((q) => {
-        const button = document.createElement("button");
+    button.addEventListener("click", () => {
+      useQuestion(question);
+    });
 
-        button.className = "bank-question";
-        button.type = "button";
-        button.textContent = q;
-
-        button.addEventListener("click", () => {
-          useQuestion(q);
-        });
-
-        categoryDiv.appendChild(button);
-      });
-
-      container.appendChild(categoryDiv);
-    }
-  );
+    bank.appendChild(button);
+  });
 }
 
-/* =========================
-   USE QUESTION
-========================= */
+window.loadCategory = loadCategory;
 
 function useQuestion(question) {
   const questionBox = $("question");
 
-  if (!questionBox) {
-    console.error("Question input not found");
-    return;
-  }
+  if (!questionBox) return;
 
   questionBox.value = question;
 
   go("live");
 
-  questionBox.focus();
+  setTimeout(() => {
+    questionBox.focus();
+  }, 100);
 }
 
 /* =========================
@@ -570,9 +580,8 @@ function renderHistory() {
 
   if (!history.length) {
     container.innerHTML = `
-      <div class="empty-state">
-        <h3>No interview history</h3>
-        <p>Your generated interview answers will appear here.</p>
+      <div class="empty-history">
+        No interview history yet.
       </div>
     `;
 
@@ -584,69 +593,49 @@ function renderHistory() {
   [...history]
     .reverse()
     .forEach((item) => {
-      const div = document.createElement("div");
+      const card = document.createElement("div");
 
-      div.className = "history-item";
+      card.className = "history-item";
 
-      div.innerHTML = `
-        <div class="history-question">
-          <strong>Q${item.index || ""}:</strong>
-          ${escapeHTML(item.question)}
-        </div>
+      const question = document.createElement("h4");
 
-        <div class="history-answer">
-          ${escapeHTML(item.answer)}
-        </div>
+      question.textContent =
+        `Question ${item.number || ""}: ${item.question}`;
 
-        <small>${escapeHTML(item.time || "")}</small>
-      `;
+      const answer = document.createElement("p");
 
-      container.appendChild(div);
+      answer.textContent = item.answer;
+
+      const time = document.createElement("small");
+
+      time.textContent = item.time;
+
+      card.appendChild(question);
+      card.appendChild(answer);
+      card.appendChild(time);
+
+      container.appendChild(card);
     });
 }
 
-/* =========================
-   CLEAR HISTORY
-========================= */
-
 function clearHistory() {
-  if (!history.length) return;
-
   const confirmed = confirm(
-    "Are you sure you want to clear interview history?"
+    "Clear all interview history?"
   );
 
   if (!confirmed) return;
 
   history = [];
 
-  localStorage.removeItem("dreamapex_history");
+  localStorage.removeItem(
+    "dreamapex_history"
+  );
 
   renderHistory();
-  updateDashboard();
+
+  updateStats();
+
   updateReport();
-}
-
-/* =========================
-   DASHBOARD
-========================= */
-
-function updateDashboard() {
-  const total = $("totalQuestions");
-
-  if (total) {
-    total.textContent = history.length;
-  }
-
-  const sessions = $("totalSessions");
-
-  if (sessions) {
-    const uniqueTimes = new Set(
-      history.map((item) => item.time)
-    );
-
-    sessions.textContent = uniqueTimes.size;
-  }
 }
 
 /* =========================
@@ -654,63 +643,157 @@ function updateDashboard() {
 ========================= */
 
 function updateReport() {
-  const total = $("reportTotal");
+  const count = $("reportCount");
 
-  if (total) {
-    total.textContent = history.length;
-  }
-
-  const reportQuestions = $("reportQuestions");
-
-  if (reportQuestions) {
-    reportQuestions.textContent = history.length;
-  }
-
-  const reportAnswers = $("reportAnswers");
-
-  if (reportAnswers) {
-    reportAnswers.textContent = history.length;
+  if (count) {
+    count.textContent = history.length;
   }
 }
 
 /* =========================
-   HTML ESCAPE
+   DASHBOARD STATS
 ========================= */
 
-function escapeHTML(value) {
-  return String(value)
-    .replaceAll("&", "&amp;")
-    .replaceAll("<", "&lt;")
-    .replaceAll(">", "&gt;")
-    .replaceAll('"', "&quot;")
-    .replaceAll("'", "&#039;");
+function updateStats() {
+  const count = $("qCount");
+
+  if (count) {
+    count.textContent = history.length;
+  }
 }
 
 /* =========================
-   LOAD SAVED SETUP
+   COPY ANSWER
 ========================= */
 
-function loadSetup() {
-  const setup = JSON.parse(
-    localStorage.getItem("dreamapex_setup") || "{}"
+function copyAnswer() {
+  const answer = $("answer")?.textContent || "";
+
+  if (!answer) return;
+
+  navigator.clipboard
+    .writeText(answer)
+    .then(() => {
+      const button = $("copyBtn");
+
+      if (button) {
+        const oldText = button.textContent;
+
+        button.textContent = "Copied ✓";
+
+        setTimeout(() => {
+          button.textContent = oldText;
+        }, 1500);
+      }
+    })
+    .catch(() => {
+      alert("Unable to copy answer.");
+    });
+}
+
+/* =========================
+   TEXT TO SPEECH
+========================= */
+
+function speakAnswer() {
+  const answer = $("answer")?.textContent || "";
+
+  if (!answer) return;
+
+  if (!window.speechSynthesis) {
+    alert("Text-to-speech is not supported.");
+    return;
+  }
+
+  window.speechSynthesis.cancel();
+
+  const speech = new SpeechSynthesisUtterance(answer);
+
+  const language = $("language")?.value || "English";
+
+  speech.lang =
+    language === "Marathi"
+      ? "mr-IN"
+      : language === "Hindi"
+      ? "hi-IN"
+      : "en-IN";
+
+  window.speechSynthesis.speak(speech);
+}
+
+/* =========================
+   BUTTON EVENTS
+========================= */
+
+document.addEventListener("DOMContentLoaded", () => {
+  loadSetup();
+
+  updateStats();
+
+  updateReport();
+
+  /* Sidebar */
+  document.querySelectorAll(".nav").forEach((button) => {
+    button.addEventListener("click", () => {
+      go(button.dataset.page);
+    });
+  });
+
+  /* Generate */
+  $("generate")?.addEventListener(
+    "click",
+    generateAnswer
   );
 
-  if ($("role") && setup.role) {
-    $("role").value = setup.role;
-  }
+  /* Mic */
+  $("micBtn")?.addEventListener(
+    "click",
+    toggleSpeech
+  );
 
-  if ($("company") && setup.company) {
-    $("company").value = setup.company;
-  }
+  /* Previous */
+  $("prevBtn")?.addEventListener(
+    "click",
+    previousQuestion
+  );
 
-  if ($("jobDescription") && setup.jobDescription) {
-    $("jobDescription").value = setup.jobDescription;
-  }
+  /* Next */
+  $("nextBtn")?.addEventListener(
+    "click",
+    nextQuestion
+  );
 
-  if ($("candidateContext") && setup.candidateContext) {
-    $("candidateContext").value =
-      setup.candidateContext;
-  }
-}
+  /* Clear history */
+  $("clearHistory")?.addEventListener(
+    "click",
+    clearHistory
+  );
 
-window.addEventListener("load", loadSetup);
+  /* Copy */
+  $("copyBtn")?.addEventListener(
+    "click",
+    copyAnswer
+  );
+
+  /* Speak answer */
+  $("speakBtn")?.addEventListener(
+    "click",
+    speakAnswer
+  );
+
+  /* Ctrl + Enter = Generate */
+  $("question")?.addEventListener(
+    "keydown",
+    (event) => {
+      if (
+        event.key === "Enter" &&
+        (event.ctrlKey || event.metaKey)
+      ) {
+        generateAnswer();
+      }
+    }
+  );
+
+  /* Default category */
+  loadCategory("AWS");
+});
