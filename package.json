@@ -1,7 +1,7 @@
 {
   "name": "dreamapex-interview-assistant",
-  "version": "1.0.0",
-  "description": "DreamApex AI-assisted interview preparation application",
+  "version": "1.1.0",
+  "description": "DreamApex AI-assisted interview preparation application using Gemini",
   "main": "server.js",
   "scripts": {
     "start": "node server.js",
@@ -10,7 +10,7 @@
   "dependencies": {
     "dotenv": "^16.4.7",
     "express": "^4.21.2",
-    "openai": "^4.77.0",
-    "ws": "^8.18.0"
+    "ws": "^8.18.0",
+    "@google/genai": "^1.19.0"
   }
 }
